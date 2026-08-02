@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate AI Health Assistant</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI';
+    background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    color: white;
+}
+
+.container {
+    width: 380px;
+    height: 650px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(15px);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.header {
+    padding: 15px;
+    text-align: center;
+    font-weight: bold;
+    background: rgba(0,0,0,0.3);
+}
+
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.msg {
+    margin: 8px;
+    padding: 10px;
+    border-radius: 10px;
+    max-width: 80%;
+}
+
+.user {
+    background: #00ffc3;
+    color: black;
+    align-self: flex-end;
+}
+
+.bot {
+    background: rgba(255,255,255,0.2);
+}
+
+.input-area {
+    display: flex;
+    padding: 10px;
+}
+
+input {
+    flex: 1;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+}
+
+button {
+    margin-left: 5px;
+    padding: 10px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+}
+
+canvas {
+    margin: 10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="header">🤖 Ultimate AI Doctor</div>
+
+    <div class="messages" id="messages"></div>
+
+    <canvas id="chart" height="150"></canvas>
+
+    <div class="input-area">
+        <input id="input" placeholder="Enter or speak symptoms...">
+        <button onclick="voice()">🎤</button>
+        <button onclick="send()">➤</button>
+    </div>
+</div>
+
+<script>
+let chart;
+
+function addMsg(text, type) {
+    let div = document.createElement("div");
+    div.className = "msg " + type;
+    div.innerText = text;
+    document.getElementById("messages").appendChild(div);
+}
+
+function send() {
+    let input = document.getElementById("input").value.toLowerCase();
+    if (!input) return;
+
+    addMsg(input, "user");
+    process(input);
+    document.getElementById("input").value = "";
+}
+
+function process(input) {
+    let diseases = {
+        Flu: 0,
+        Cold: 0,
+        Migraine: 0,
+        Infection: 0,
+        HeartIssue: 0
+    };
+
+    if (input.includes("fever")) diseases.Flu += 40;
+    if (input.includes("cough")) diseases.Flu += 40;
+    if (input.includes("cold")) diseases.Cold += 60;
+    if (input.includes("headache")) diseases.Migraine += 70;
+    if (input.includes("stomach")) diseases.Infection += 60;
+    if (input.includes("chest")) diseases.HeartIssue += 90;
+
+    let maxDisease = Object.keys(diseases).reduce((a,b)=>diseases[a]>diseases[b]?a:b);
+
+    let probability = diseases[maxDisease];
+    let severity = probability > 80 ? "HIGH ⚠️" : probability > 50 ? "MEDIUM" : "LOW";
+
+    let reply = `
+🩺 Disease: ${maxDisease}
+📊 Probability: ${probability}%
+⚡ Severity: ${severity}
+`;
+
+    if (severity.includes("HIGH")) {
+        reply += "\n🚨 Consult doctor immediately!";
+    } else {
+        reply += "\n💊 Take rest & basic care";
+    }
+
+    setTimeout(()=>addMsg(reply,"bot"),500);
+
+    updateChart(diseases);
+}
+
+function updateChart(data) {
+    let ctx = document.getElementById("chart").getContext("2d");
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(data),
+            datasets: [{
+                label: 'Probability %',
+                data: Object.values(data)
+            }]
+        }
+    });
+}
+
+// 🎤 Voice
+function voice() {
+    let rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    rec.onresult = e => {
+        document.getElementById("input").value = e.results[0][0].transcript;
+    };
+    rec.start();
+}
+</script>
+
+</body>
+</html>
